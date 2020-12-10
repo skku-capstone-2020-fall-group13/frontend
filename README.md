@@ -1,24 +1,10 @@
 # capstone-project-frontend
 
-## Project setup
-```
-yarn install
-```
+## 구현 기능
 
-### Compiles and hot-reloads for development
-```
-yarn serve
-```
-
-### Compiles and minifies for production
-```
-yarn build
-```
-
-### Lints and fixes files
-```
-yarn lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+- [x] 설문조사
+- [x] 장소 검색
+- [x] 지도 클릭시 마커 이동
+- [ ] 마커에 분석 버튼 추가
+- [ ] 분석 버튼 클릭 시 백엔드 API 호출
+- [ ] 분석 결과 화면
