@@ -1,60 +1,71 @@
 <template>
-  <v-app>
-    <v-app-bar
-      app
-      color="primary"
-      dark
-    >
-      <div class="d-flex align-center">
-        <v-img
-          alt="Vuetify Logo"
-          class="shrink mr-2"
-          contain
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-logo-dark.png"
-          transition="scale-transition"
-          width="40"
-        />
-
-        <v-img
-          alt="Vuetify Name"
-          class="shrink mt-1 hidden-sm-and-down"
-          contain
-          min-width="100"
-          src="https://cdn.vuetifyjs.com/images/logos/vuetify-name-dark.png"
-          width="100"
-        />
-      </div>
-
-      <v-spacer></v-spacer>
-
-      <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
-        target="_blank"
-        text
-      >
-        <span class="mr-2">Latest Release</span>
-        <v-icon>mdi-open-in-new</v-icon>
-      </v-btn>
-    </v-app-bar>
-
-    <v-main>
-      <HelloWorld/>
-    </v-main>
-  </v-app>
+  <div class="container">
+    <app-side-bar
+      class="sidebar"
+      @select-result="updateCoords"
+    />
+    <app-base-map
+      class="map"
+      :latitude="latitude"
+      :longitude="longitude"
+    />
+    <app-survey
+      class="dialog"
+      :show="surveyShow"
+      @finished="finishSurvey"
+    />
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld';
+import AppBaseMap from './components/AppBaseMap.vue';
+import AppSurvey from './components/AppSurvey.vue';
+import AppSideBar from './components/AppSideBar.vue';
 
 export default {
   name: 'App',
-
   components: {
-    HelloWorld,
+    AppBaseMap,
+    AppSurvey,
+    AppSideBar
   },
-
-  data: () => ({
-    //
-  }),
+  data() {
+    return {
+      latitude: null,
+      longitude: null,
+      surveyShow: true,
+      survey: null,
+      currentPlace: null,
+    };
+  },
+  methods: {
+    finishSurvey(survey) {
+      this.survey = survey;
+      this.surveyShow = false;
+    },
+    updateCoords(coords) {
+      this.latitude = coords.latitude;
+      this.longitude = coords.longitude;
+    }
+  }
 };
 </script>
+
+<style scoped lang="scss">
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
+.sidebar {
+  width: 400px;
+  height: 100%;
+}
+
+.map {
+  flex: 1;
+}
+</style>
