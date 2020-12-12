@@ -5,12 +5,16 @@
     :close-on-click-modal="false"
     :show-close="false"
     :visible.sync="show"
+    width="600px"
   >
     <span
       slot="title"
       class="dialog-header"
     >
       간단한 설문조사로 당신의 주거 성향을 파악합니다.
+    </span>
+    <span>
+      주거 쾌적도란? ㅇㅇㅇ
     </span>
     <el-steps
       :active="step"
@@ -28,7 +32,7 @@
       <div class="survey-items">
         <div
           class="survey-item"
-          :class="{active: houseType == 'apartment'}"
+          :class="{ active: houseType == 'apartment' }"
           @click="houseType = 'apartment'"
         >
           <div class="survey-item-icon">
@@ -38,7 +42,7 @@
         </div>
         <div
           class="survey-item"
-          :class="{active: houseType == 'flat'}"
+          :class="{ active: houseType == 'flat' }"
           @click="houseType = 'flat'"
         >
           <div class="survey-item-icon">
@@ -66,7 +70,7 @@
       <div class="survey-items">
         <div
           class="survey-item"
-          :class="{active: areaType == 'urban'}"
+          :class="{ active: areaType == 'urban' }"
           @click="areaType = 'urban'"
         >
           <div class="survey-item-icon">
@@ -76,7 +80,7 @@
         </div>
         <div
           class="survey-item"
-          :class="{active: areaType == 'suburb'}"
+          :class="{ active: areaType == 'suburb' }"
           @click="areaType = 'suburb'"
         >
           <div class="survey-item-icon">
@@ -117,23 +121,27 @@
 
 <script>
 export default {
-    props: ['show'],
-    data() {
-        return {
-          step: 0,
-          houseType: null,
-          areaType: null,
-        };
+  props: ['show'],
+  data() {
+    return {
+      step: 0,
+      houseType: null,
+      areaType: null
+    };
+  },
+  methods: {
+    nextStep(selection) {
+      if (selection) this.step += 1;
     },
-    methods: {
-      nextStep(selection) {
-        if(selection) this.step += 1;
-      },
-      finish() {
-        this.$emit('finished', { 'houseType': this.houseType, 'areaType': this.areaType });
-      },
-    },
-}
+    finish() {
+      this.$store.commit('setSurvey', {
+        houseType: this.houseType,
+        areaType: this.areaType
+      });
+      this.$emit('finished');
+    }
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -174,13 +182,13 @@ $vertical-gap: 2vh;
 }
 
 .survey-item-icon {
-  padding: 4vw;
+  padding: 40px;
   border-radius: 100%;
-  background: #DCDFE6;
+  background: #dcdfe6;
 
   img {
     fill: white;
-    width: 4vw;
+    width: 60px;
   }
 }
 </style>

@@ -1,18 +1,20 @@
 <template>
   <div class="container">
-    <app-side-bar
-      class="sidebar"
-      @select-result="updateCoords"
-    />
-    <app-base-map
-      class="map"
-      :latitude="latitude"
-      :longitude="longitude"
-    />
+    <app-side-bar class="sidebar" />
+    <div class="content">
+      <app-base-map
+        v-show="contentState === 'map'"
+        class="map"
+      />
+      <app-analysis
+        v-show="contentState === 'analysis'"
+        class="analysis"
+      />
+    </div>
     <app-survey
-      class="dialog"
-      :show="surveyShow"
-      @finished="finishSurvey"
+      id="dialog-survey"
+      :show="showSurvey"
+      @finished="showSurvey = false"
     />
   </div>
 </template>
@@ -21,33 +23,22 @@
 import AppBaseMap from './components/AppBaseMap.vue';
 import AppSurvey from './components/AppSurvey.vue';
 import AppSideBar from './components/AppSideBar.vue';
+import AppAnalysis from './components/AppAnalysis.vue';
 
 export default {
   name: 'App',
   components: {
     AppBaseMap,
     AppSurvey,
-    AppSideBar
+    AppSideBar,
+    AppAnalysis
   },
   data() {
     return {
-      latitude: null,
-      longitude: null,
-      surveyShow: true,
-      survey: null,
-      currentPlace: null,
+      showSurvey: true,
+      contentState: 'map'
     };
   },
-  methods: {
-    finishSurvey(survey) {
-      this.survey = survey;
-      this.surveyShow = false;
-    },
-    updateCoords(coords) {
-      this.latitude = coords.latitude;
-      this.longitude = coords.longitude;
-    }
-  }
 };
 </script>
 
@@ -65,7 +56,17 @@ export default {
   height: 100%;
 }
 
-.map {
+.content {
   flex: 1;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.analysis {
+  width: 100%;
+  height: 100%;
 }
 </style>
