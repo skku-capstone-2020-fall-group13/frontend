@@ -8,7 +8,7 @@ jobs:
     steps:
       - name: Save Secrets 😎
         run: |
-          echo "$SECRETS" > key
+          echo "$SECRETS" > secrets.json
         shell: bash
         env:
           SECRETS: ${{secrets.SECRETS}}
