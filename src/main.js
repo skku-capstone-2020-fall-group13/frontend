@@ -1,8 +1,14 @@
-import Vue from 'vue'
-import App from './App.vue'
+import Vue from 'vue';
+import App from './App.vue';
 
-Vue.config.productionTip = false
+import './plugins/element.js';
+import './plugins/axios.js';
+
+import store from './store.js';
+
+Vue.config.productionTip = false;
 
 new Vue({
   render: h => h(App),
-}).$mount('#app')
+  store,
+}).$mount('#app');
