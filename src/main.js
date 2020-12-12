@@ -1,11 +1,13 @@
-import Vue from 'vue'
-import App from './App.vue'
+import Vue from 'vue';
+import App from './App.vue';
 
-import './plugins/element.js'
-import './plugins/axios.js'
+import './plugins/element.js';
+import './plugins/axios.js';
 
-Vue.config.productionTip = false
+
+Vue.config.productionTip = false;
 
 new Vue({
-  render: h => h(App)
-}).$mount('#app')
+  render: h => h(App),
+  store,
+}).$mount('#app');
