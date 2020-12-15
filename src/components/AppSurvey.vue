@@ -7,15 +7,14 @@
     :visible.sync="show"
     width="600px"
   >
-    <span
+    <div
       slot="title"
       class="dialog-header"
     >
       간단한 설문조사로 당신의 주거 성향을 파악합니다.
-    </span>
-    <span>
-      주거 쾌적도란? ㅇㅇㅇ
-    </span>
+      <h4>주거 쾌적도란?</h4>
+      <span>건강과 쾌적감에 큰 영향을 미치는 주변 녹지, 도로, 건물 상황 등을 고려해 해당 구역에서 거주 시에 얼마나 쾌적감을 느끼는지 가늠할 수 있는 지표입니다.</span>
+    </div>
     <el-steps
       :active="step"
       finish-status="success"
@@ -32,8 +31,8 @@
       <div class="survey-items">
         <div
           class="survey-item"
-          :class="{ active: houseType == 'apartment' }"
-          @click="houseType = 'apartment'"
+          :class="{ active: houseType == true }"
+          @click="houseType = true"
         >
           <div class="survey-item-icon">
             <img src="@/assets/apartment.svg">
@@ -42,8 +41,8 @@
         </div>
         <div
           class="survey-item"
-          :class="{ active: houseType == 'flat' }"
-          @click="houseType = 'flat'"
+          :class="{ active: houseType == false }"
+          @click="houseType = false"
         >
           <div class="survey-item-icon">
             <img src="@/assets/home.svg">
@@ -70,8 +69,8 @@
       <div class="survey-items">
         <div
           class="survey-item"
-          :class="{ active: areaType == 'urban' }"
-          @click="areaType = 'urban'"
+          :class="{ active: areaType == true }"
+          @click="areaType = true"
         >
           <div class="survey-item-icon">
             <img src="@/assets/buildings.svg">
@@ -80,8 +79,8 @@
         </div>
         <div
           class="survey-item"
-          :class="{ active: areaType == 'suburb' }"
-          @click="areaType = 'suburb'"
+          :class="{ active: areaType == false }"
+          @click="areaType = false"
         >
           <div class="survey-item-icon">
             <img src="@/assets/field.svg">
@@ -131,10 +130,10 @@ export default {
   },
   methods: {
     nextStep(selection) {
-      if (selection) this.step += 1;
+      if (selection === true || selection === false) this.step += 1;
     },
     finish() {
-      this.$store.commit('setSurvey', {
+      this.$store.commit('setConfig', {
         houseType: this.houseType,
         areaType: this.areaType
       });

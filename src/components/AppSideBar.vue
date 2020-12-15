@@ -5,12 +5,12 @@
       <el-input
         v-model="query"
         type="text"
-        @keyup.native.enter="getAddress"
+        @keyup.native.enter="search"
       >
         <i
           slot="suffix"
           class="el-input__icon el-icon-search"
-          @click="getAddress"
+          @click="search"
         />
       </el-input>
       <div class="sidebar-nav">
@@ -18,8 +18,11 @@
           type="primary"
           class="sidebar-nav-button"
           icon="el-icon-search"
-          :class="{ active: activeNavState == 0 }"
-          @click="activeNavState = 0"
+          :class="{ active: navState === 'search' }"
+          @click="
+            navState = 'search';
+            contentState = 'map';
+          "
         >
           검색
         </el-button>
@@ -27,25 +30,37 @@
           type="primary"
           class="sidebar-nav-button"
           icon="el-icon-collection-tag"
-          :class="{ active: activeNavState == 1 }"
-          @click="activeNavState = 1"
+          :class="{ active: navState === 'analysis' }"
+          @click="
+            navState = 'analysis';
+            contentState = 'analysis';
+          "
         >
-          분석 기록
+          분석
+        </el-button>
+        <el-button
+          type="primary"
+          class="sidebar-nav-button"
+          icon="el-icon-user"
+          :class="{ active: navState === 'my' }"
+          @click="navState = 'my'"
+        >
+          MY
         </el-button>
       </div>
     </div>
     <div
-      v-if="activeNavState === 0"
-      class="sidebar-content"
+      v-if="navState === 'search'"
+      class="sidebar-content search"
     >
       <div
         v-if="results.length == 0"
-        class="search-results-empty"
+        class="list-empty"
       >
         검색창에 알고 싶은 장소를 입력하세요.
       </div>
       <div v-if="results.length > 0">
-        <div class="search-results-meta">
+        <div class="list-meta">
           <span>전체 결과 {{ results.length }}건</span>
           <el-button
             icon="el-icon-close"
@@ -54,24 +69,23 @@
             @click="clearResults"
           />
         </div>
-        <ul class="search-results">
+        <ul class="list-items">
           <li
             v-for="(result, index) in results"
             :key="index"
-            class="search-result"
+            class="list-item"
             :class="{ active: activeResult === result }"
           >
-            <a
-              class="search-result-content"
-              href="#"
-              @click="selectResult(result)"
-            >
+            <div class="list-item-content">
               <h4><i class="el-icon-place" />{{ result.meta.name }}</h4>
               <small>{{ result.meta.address }}</small>
-            </a>
-            <div class="search-result-actions">
-              <el-button icon="el-icon-magic-stick">
-                분석
+            </div>
+            <div class="list-item-actions">
+              <el-button
+                icon="el-icon-view"
+                @click="selectResult(result)"
+              >
+                보기
               </el-button>
             </div>
           </li>
@@ -79,10 +93,99 @@
       </div>
     </div>
     <div
-      v-if="activeNavState === 1"
-      class="sidebar-content"
+      v-if="navState === 'analysis'"
+      class="sidebar-content history"
     >
-      <ul class="history-items" />
+      <div
+        v-if="histories.length == 0"
+        class="list-empty"
+      >
+        분석 기록이 존재하지 않습니다.
+      </div>
+      <div v-if="histories.length > 0">
+        <div class="list-meta">
+          <span>전체 결과 {{ histories.length }}건</span>
+        </div>
+        <ul class="list-items">
+          <li
+            v-for="(history, index) in histories"
+            :key="index"
+            class="list-item"
+            :class="{ active: isHistoryActivated(history) }"
+          >
+            <div class="list-item-content">
+              <h4>
+                <i class="el-icon-place" />{{ history.name || '미등록 장소' }}
+              </h4>
+              <small>{{ history.address }}</small>
+            </div>
+            <div>
+              <h4>
+                {{
+                  getPersonalizedScore(
+                    history.scores.score,
+                    history.scores.criterion.personalize
+                  ) | toFixed(2)
+                }}점
+              </h4>
+            </div>
+            <div class="list-item-actions">
+              <el-button
+                v-if="!isHistoryActivated(history) && analyses.length < 3"
+                icon="el-icon-view"
+                @click="selectHistory(history)"
+              >
+                보기
+              </el-button>
+              <el-button
+                v-if="isHistoryActivated(history)"
+                icon="el-icon-close"
+                @click="unselectHistory(history)"
+              >
+                해제
+              </el-button>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div
+      v-if="navState === 'my'"
+      class="sidebar-content my"
+    >
+      <div>
+        <h2>선호도 설정</h2>
+        <div class="preference-item">
+          <h4>선호 주거 형태</h4>
+          <el-radio
+            v-model="configHouseType"
+            :label="true"
+          >
+            아파트
+          </el-radio>
+          <el-radio
+            v-model="configHouseType"
+            :label="false"
+          >
+            주택
+          </el-radio>
+        </div>
+        <div class="preference-item">
+          <h4>선호 주거 환경</h4>
+          <el-radio
+            v-model="configAreaType"
+            :label="true"
+          >
+            시내
+          </el-radio>
+          <el-radio
+            v-model="configAreaType"
+            :label="false"
+          >
+            교외
+          </el-radio>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -94,45 +197,123 @@ export default {
       query: '',
       results: [],
       activeResult: null,
-      activeNavState: 0
+      configHouseType: null,
+      configAreaType: null
     };
   },
+  computed: {
+    histories() {
+      return this.$store.state.histories;
+    },
+    analyses() {
+      return this.$store.state.analyses;
+    },
+    navState: {
+      get() {
+        return this.$store.state.navState;
+      },
+      set(navState) {
+        this.$store.commit('setNavState', navState);
+      }
+    },
+    contentState: {
+      get() {
+        return this.$store.state.contentState;
+      },
+      set(contentState) {
+        this.$store.commit('setContentState', contentState);
+      }
+    },
+    config: {
+      get() {
+        return this.$store.state.config;
+      },
+      set(config) {
+        this.$store.commit('setConfig', config);
+      }
+    }
+  },
+  watch: {
+    configHouseType() {
+      this.changeConfig();
+    },
+    configAreaType() {
+      this.changeConfig();
+    },
+    config() {
+      this.configHouseType = this.config.houseType;
+      this.configAreaType = this.config.areaType;
+    },
+    analyses() {
+      this.$forceUpdate();
+    }
+  },
+  mounted() {
+    this.configHouseType = this.config.houseType;
+    this.configAreaType = this.config.areaType;
+  },
   methods: {
-    getAddress() {
-      this.$http
-        .get('https://dapi.kakao.com/v2/local/search/keyword.json', {
+    async search() {
+      this.navState = 'search';
+      this.contentState = 'map';
+      const { data } = await this.$http.get(
+        'https://dapi.kakao.com/v2/local/search/keyword.json',
+        {
           headers: {
             Authorization: `KakaoAK ${process.env.VUE_APP_KAKAO_REST_API_KEY}`
           },
           params: {
             query: this.query
           }
-        })
-        .then(({ data }) => {
-          this.results = data.documents.map(doc => ({
-            meta: {
-              name: doc.place_name,
-              address: doc.road_address_name,
-              category: doc.category
-            },
-            coords: {
-              latitude: doc.y,
-              longitude: doc.x
-            }
-          }));
+        }
+      );
 
-          if (this.results.length > 0) this.selectResult(this.results[0]);
-        });
+      this.results = data.documents.map(doc => ({
+        meta: {
+          name: doc.place_name,
+          address: doc.address_name
+        },
+        coords: {
+          latitude: doc.y,
+          longitude: doc.x
+        }
+      }));
+
+      if (this.results.length > 0) this.selectResult(this.results[0]);
     },
     selectResult(result) {
       this.activeResult = result;
-      this.$store.commit('setPlace', result.place);
       this.$store.commit('setCoords', result.coords);
+    },
+    requestAnalysis(result) {
+      this.$store.dispatch('requestAnalysis', {
+        ...result.meta,
+        coords: result.coords
+      });
     },
     clearResults() {
       this.query = '';
       this.results = [];
       this.activeResult = null;
+    },
+    selectHistory(history) {
+      this.$store.commit('addAnalysis', history);
+      this.$store.commit('setContentState', 'analysis');
+    },
+    unselectHistory(history) {
+      this.$store.commit('removeAnalysis', history);
+    },
+    isHistoryActivated(history) {
+      return this.analyses.indexOf(history) >= 0;
+    },
+    changeConfig() {
+      this.config = {
+        houseType: this.configHouseType,
+        areaType: this.configAreaType
+      };
+    },
+    getPersonalizedScore(score, personalizeCriterion) {
+      return this.$store.getters.getPersonalizedScore(score, personalizeCriterion);
     }
   }
 };
@@ -171,22 +352,35 @@ export default {
   flex: 1;
   overflow-y: auto;
   display: grid;
+
+  &.my {
+    padding: 20px;
+
+    div {
+      display: flex;
+      flex-flow: column;
+      row-gap: 20px;
+    }
+    h2 {
+      margin: 0;
+    }
+  }
 }
 
-.search-results-empty {
+.list-empty {
   justify-self: center;
   align-self: center;
   display: flex;
 }
 
-.search-results-meta {
+.list-meta {
   padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.search-results {
+.list-items {
   display: flex;
   justify-self: stretch;
   flex-flow: column;
@@ -195,7 +389,7 @@ export default {
   list-style: none;
 }
 
-.search-result {
+.list-item {
   padding: 20px;
   position: relative;
   border-bottom: 1px solid #dcdfe6;
@@ -213,16 +407,16 @@ export default {
     background: #ecf5ff;
   }
 
-  .search-result-content {
+  .list-item-content {
     text-decoration: none;
     color: #000;
   }
 
-  .search-result-actions {
+  .list-item-actions {
     display: none;
   }
 
-  &:hover .search-result-actions {
+  &:hover .list-item-actions {
     display: flex;
     height: 100%;
     position: absolute;
@@ -230,6 +424,16 @@ export default {
     right: 20px;
     justify-content: flex-end;
     align-items: center;
+  }
+}
+
+.preference-item {
+  background: #ecf5ff;
+  border-radius: 4px;
+  padding: 20px;
+
+  h4 {
+    margin: 0;
   }
 }
 </style>

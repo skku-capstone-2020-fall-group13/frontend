@@ -3,14 +3,19 @@ import Vuex from 'vuex';
 
 Vue.use(Vuex);
 
-const defaultPlace = {
-  name: '성균관대학교 자연과학캠퍼스',
-  address: '경기도 수원시 장안구 율천동 서부로 2066'
+const criteriaMapper = {
+  '주택/아파트 지수': 'houseType',
+  '개발 지수': 'areaType'
 };
 
 const defaultCoords = {
   latitude: 37.290553,
   longitude: 126.9737686
+};
+
+const defaultConfig = {
+  houseType: true,
+  areaType: true,
 };
 
 const getCurrentLocationCoords = () => {
@@ -23,25 +28,62 @@ const getCurrentLocationCoords = () => {
 
 export default new Vuex.Store({
   state: {
-    survey: null,
-    scores: [],
-    place: defaultPlace,
-    placeHistory: [],
+    config: defaultConfig,
+    analyses: [],
+    histories: [],
     coords: defaultCoords,
     currentLocationCoords: null,
+    navState: 'search',
+    contentState: 'map',
+  },
+  getters: {
+    getPersonalizedScore: (state) => (score, personalizeCriterion) => {
+      let finalScore = score;
+      const personalize_weight = 0.1;
+
+      personalizeCriterion.forEach((criteria) => {
+        const multiplier = state.config[criteriaMapper[criteria.name]] ? 1 : -1;
+        finalScore += (personalize_weight * multiplier * criteria.score);
+      });
+
+      return finalScore;
+    }
   },
   mutations: {
-    setSurvey: (state, survey) => (state.survey = survey),
-    setPlace: (state, place) => (state.place = place),
+    setConfig: (state, config) => (state.config = config),
     setCoords: (state, coords) => (state.coords = coords),
     setCurrentLocationCoords: (state, currentLocationCoords) =>
-      (state.currentLocationCoords = currentLocationCoords)
+      (state.currentLocationCoords = currentLocationCoords),
+    setNavState: (state, navState) => (state.navState = navState),
+    setContentState: (state, contentState) => (state.contentState = contentState),
+    addAnalysis: (state, analysis) => (state.analyses.push(analysis)),
+    removeAnalysis: (state, analysis) => (state.analyses.splice(state.analyses.indexOf(analysis), 1)),
+    addHistory: (state, history) => (state.histories.push(history)),
   },
   actions: {
     async setCurrentLocationCoords({ commit, state }) {
       if (!state.currentLocationCoords)
         commit('setCurrentLocationCoords', await getCurrentLocationCoords());
       commit('setCoords', state.currentLocationCoords);
-    }
+    },
+    async requestAnalysis({ state, commit }, { coords, name, address }) {
+      const existAnalyses = state.histories.filter(h => h.coords == coords);
+      if (existAnalyses.length) {
+        if (state.analyses.indexOf(existAnalyses[0]) < 0)
+          commit('addAnalysis', existAnalyses[0]);
+        return;
+      }
+
+      const { data } = await Vue.axios.get('https://capstone-backend.junbread.win/analyze', { params: { x: coords.longitude, y: coords.latitude }});
+      
+      const analysis = { coords, name, address, ...data };
+
+      commit('addHistory', analysis);
+
+      if (state.analyses.length < 3)
+        commit('addAnalysis', analysis);
+      else
+        alert('분석은 최대 3개까지 동시에 볼 수 있습니다. 기존에 선택되어 있는 분석을 해제하고 새롭게 추가된 분석을 선택하세요.');
+    },
   }
 });
