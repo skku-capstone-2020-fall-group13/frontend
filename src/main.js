@@ -8,6 +8,11 @@ import store from './store.js';
 
 Vue.config.productionTip = false;
 
+Vue.filter('toFixed', function(value, decimal) {
+  const v = parseFloat(value);
+  return v.toFixed(decimal);
+});
+
 new Vue({
   render: h => h(App),
   store,

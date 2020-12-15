@@ -3,11 +3,11 @@
     <app-side-bar class="sidebar" />
     <div class="content">
       <app-base-map
-        v-show="contentState === 'map'"
+        v-if="contentState === 'map'"
         class="map"
       />
       <app-analysis
-        v-show="contentState === 'analysis'"
+        v-if="contentState === 'analysis'"
         class="analysis"
       />
     </div>
@@ -20,6 +20,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
+
 import AppBaseMap from './components/AppBaseMap.vue';
 import AppSurvey from './components/AppSurvey.vue';
 import AppSideBar from './components/AppSideBar.vue';
@@ -36,9 +38,12 @@ export default {
   data() {
     return {
       showSurvey: true,
-      contentState: 'map'
     };
   },
+  computed: mapState(['contentState']),
+  mounted() {
+    this.$store.dispatch('setCurrentLocationCoords');
+  }
 };
 </script>
 
@@ -63,10 +68,12 @@ export default {
 .map {
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
 }
 
 .analysis {
   width: 100%;
   height: 100%;
+  box-sizing: border-box;
 }
 </style>
