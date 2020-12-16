@@ -39,11 +39,13 @@ export default new Vuex.Store({
   getters: {
     getPersonalizedScore: (state) => (score, personalizeCriterion) => {
       let finalScore = score;
-      const personalize_weight = 0.1;
+      const personalizeWeight = 0.1;
 
       personalizeCriterion.forEach((criteria) => {
-        const multiplier = state.config[criteriaMapper[criteria.name]] ? 1 : -1;
-        finalScore += (personalize_weight * multiplier * criteria.score);
+        if (state.config[criteriaMapper[criteria.name]])
+          finalScore += personalizeWeight * criteria.score;
+        else
+          finalScore += personalizeWeight * (100 - criteria.score);
       });
 
       return finalScore;
